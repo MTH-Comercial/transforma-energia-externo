@@ -144,11 +144,16 @@ def display_point(e, prefix):
     with c1:metric("Demanda P15 móvel máxima",f"{fmt(e['p15_max_kw'])} kW","Maior média móvel válida")
     with c2:metric("S15 máxima",f"{fmt(e['s15_max_kva'])} kVA","Aparente média em 15 min")
     with c3:metric("Energia registrada",f"{fmt(e['energia_kwh'],0)} kWh","Intervalos com dados")
-    with c4:metric("Cobertura dos registros",f"{fmt(100*e['validos']/e['registros'])}%",f"{e['validos']} de {e['registros']} registros")
-    st.caption("Cobertura é integridade de medição, não percentual do tempo em que a máquina esteve funcionando.")
+    with c4:metric("Leituras completas",f"{fmt(100*e['validos']/e['registros'])}%",f"{e['validos']} de {e['registros']} registros")
+    if code in ("BRUNO", "JAGUAR"):
+        st.caption("Conforme a operação informada, o gerador a diesel e o triturador são desligados nas paradas de produção. O percentual acima mostra registros completos, NÃO horas de funcionamento.")
+    else:
+        st.caption("Porcentagem de registros elétricos completos no período da coleta, não fator de utilização do equipamento.")
     glossary()
 
-    section("Curvas históricas — intervalos completos", "As linhas são interrompidas quando não existem três registros consecutivos válidos. Trechos vazios NÃO são preenchidos com zero.")
+    section("Curvas históricas — intervalos medidos", "Linhas interrompidas onde não existem três registros completos consecutivos de cinco minutos; não ligamos dados separados por paradas nem assumimos potência zero.")
+    if code in ("BRUNO", "JAGUAR"):
+        st.info("Contexto operacional informado: quando a trituração para, o gerador e o triturador são desligados. Os espaços em branco representam períodos fora da coleta com grandezas disponíveis, não falhas assumidas de fornecimento.")
     series=load_series(code)
     if series.empty:
         st.warning("Não foram encontradas séries disponíveis para esse ponto.")
@@ -191,29 +196,34 @@ def display_point(e, prefix):
 
     valid=data.dropna(subset=["p15_kw"]).copy()
     if not valid.empty:
-        section("Distribuição e perfil da demanda", "Estatísticas destas janelas móveis válidas; os períodos sem medição ficam fora dos cálculos.")
+        section("Distribuição da demanda observada", "Cada janela móvel de 15 minutos é calculada com três registros completos de 5 minutos; ela não equivale a uma partida do equipamento.")
         a,b=st.columns(2)
         with a:
             f=base_fig(ytitle="P15 (kW)")
             y=valid["p15_kw"].sort_values(ascending=False).to_numpy()
             x=[100*i/max(1,len(y)-1) for i in range(len(y))]
             f.add_trace(go.Scatter(x=x,y=y,name="Curva de duração",mode="lines",line=dict(color=COLORS['teal'],width=2)))
-            f.update_xaxes(title="Percentual das janelas válidas (%)")
+            f.update_xaxes(title="Percentual acumulado das janelas analisadas (%)",range=[0,100])
             st.plotly_chart(f,use_container_width=True,key=prefix+"_duracao")
+            st.caption("**Curva de duração:** demandas ordenadas da maior para a menor. A posição de 20%, por exemplo, indica uma demanda atingida ou superada em aproximadamente 20% das janelas calculadas. Não representa 20% das horas do período, pois há intervalos sem valores.")
         with b:
-            f=base_fig(ytitle="Quantidade de janelas")
+            f=base_fig(ytitle="Janelas móveis de 15 minutos (contagem)")
             f.add_trace(go.Histogram(x=valid["p15_kw"],nbinsx=25,name="Distribuição P15",marker_color=COLORS['blue']))
-            f.update_xaxes(title="Demanda P15 (kW)")
+            f.update_xaxes(title="Faixa de demanda P15 (kW)")
             st.plotly_chart(f,use_container_width=True,key=prefix+"_hist")
-        section("Mapa de carga por dia e hora", "Cada célula representa a média das janelas válidas daquela hora; ausência de célula significa falta de medição válida.")
+            st.caption("**Distribuição:** a altura de cada barra indica quantas janelas de 15 minutos calculadas ficaram na faixa de potência do eixo horizontal. Não é a quantidade de vezes que o triturador foi ligado. O limiar de 10 kW é usado apenas no estudo de episódios/horas em carga. Como as janelas móveis se sobrepõem, a contagem não equivale a intervalos independentes.")
+        note_map = ("Cada célula contém a média calculada naquela hora. Nos trituradores, espaços em branco são compatíveis com paradas e desligamento do gerador conforme operação informada." if code in ("BRUNO","JAGUAR") else "Cada célula contém a média calculada naquela hora. Espaços em branco significam ausência de janelas calculáveis.")
+        section("Mapa de carga por dia e hora", note_map)
         valid["dia"] = valid["data"].dt.strftime("%d/%m")
         valid["hora"] = valid["data"].dt.hour
-        pivot = valid.pivot_table(index="dia",columns="hora",values="p15_kw",aggfunc="mean",sort=False)
-        f=go.Figure(go.Heatmap(x=[f"{h:02d}h" for h in pivot.columns],y=pivot.index,z=pivot.values,
+        horas = list(range(24))
+        pivot = valid.pivot_table(index="dia",columns="hora",values="p15_kw",aggfunc="mean",sort=False).reindex(columns=horas)
+        f=go.Figure(go.Heatmap(x=[f"{h:02d}h" for h in horas],y=pivot.index,z=pivot.values,
             colorscale=[[0,"#e8f5f2"],[.5,"#2d9a9e"],[1,"#143c59"]],colorbar=dict(title="kW"),
             hovertemplate="Dia %{y} · %{x}<br>Demanda média: %{z:.1f} kW<extra></extra>"))
         f.update_layout(height=max(300,28*len(pivot)+90),margin=dict(l=8,r=8,t=15,b=10),
-            xaxis_title="Hora do dia",yaxis_title="Dia",paper_bgcolor="rgba(0,0,0,0)",font=dict(color="#29475a"))
+            xaxis_title="Hora do dia (00h–23h; 24h = 00h do dia seguinte)",yaxis_title="Dia",paper_bgcolor="rgba(0,0,0,0)",font=dict(color="#29475a"))
+        f.update_xaxes(type="category",categoryorder="array",categoryarray=[f"{h:02d}h" for h in horas],tickangle=0)
         st.plotly_chart(f,use_container_width=True,key=prefix+"_calor")
 
     section("Indicadores adicionais")
@@ -221,13 +231,14 @@ def display_point(e, prefix):
     with more[0]:st.metric("P5 máxima · kW",fmt(e['p5_max_kw']))
     with more[1]:st.metric("S5 máxima · kVA",fmt(e['s5_max_kva']))
     with more[2]:st.metric("Pico aparente intra-5 min · kVA",fmt(e['s_intra_kva']))
-    with more[3]:st.metric("P95 P15 móvel · kW",fmt(e['p15_p95_kw']))
+    with more[3]:st.metric("P15 — percentil 95 · kW",fmt(e['p15_p95_kw']))
+    st.caption("**P95 da demanda de 15 min:** em 95% das janelas calculadas, a demanda foi igual ou inferior a esse valor; somente 5% ultrapassaram esse patamar. Ajuda a caracterizar a carga elevada habitual, mas não representa o maior pico.")
     if code in ("BRUNO","JAGUAR"):
         x,y,z=st.columns(3)
         with x:st.metric("Energia média por dia ativo",f"{fmt(e['energia_media_dia_ativo_kwh'])} kWh")
         with y:st.metric("Energia média por episódio",f"{fmt(e['energia_media_episodio_kwh'])} kWh")
         with z:st.metric("Episódios observados",str(e['episodios']))
-        st.caption("Episódios são intervalos consecutivos com potência ≥ 10 kW; não equivalem a uma contagem validada de partidas elétricas.")
+        st.caption("Episódios são trechos consecutivos com potência média ≥ 10 kW: esse limiar serve para estimar horas em carga e episódios, NÃO para contar janelas válidas nem determinar a quantidade exata de partidas elétricas.")
 
 
 st.markdown('''<style>
