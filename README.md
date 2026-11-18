@@ -1,37 +1,32 @@
-# Portal técnico energético — Transforma (externo)
+# Transforma — Portal Técnico Energético Externo (v5.0)
 
-Versão em Streamlit Community Cloud do portal de apresentação técnica.
+Dashboard público de consulta técnica, independente do sistema administrativo e sem autenticação.
 
-## Conteúdo
-- Distribuição funcional TR1, TR2 e TR3 e trituradores Bruno/Jaguar
-- Séries de potência aparente e ativa de 15 minutos (amostras para apresentação)
-- Resultados e indicadores das campanhas completas
-- Cenários **hipotéticos** de sobreposição dos históricos Bruno (2024) e Jaguar (2026)
-- Indicadores técnicos de energia e demanda na entrada em média tensão (jan–ago/2026)
+## Publicação
+- Repositório: `MTH-Comercial/transforma-energia-externo`
+- Branch: `main`
+- Arquivo: `app.py`
+- Endereço: https://transforma-energia.streamlit.app/
 
-O arquivo `dados.json` contém exclusivamente o recorte técnico destinado à apresentação externa. Não existem senhas, faturas originais, preços, contas, bancos de dados ou planilhas brutas. Este aplicativo é **público e sem autenticação**.
+## O que mudou
+- Seleção interativa de TR1, TR2, TR3, Bruno e Jaguar.
+- Séries derivadas completas em `series/*.csv`, com **quebras explícitas nos intervalos sem três medições válidas e consecutivas de 5 minutos**; não se interpola consumo nem se inventam valores zero.
+- Curvas de P15 e S15, tensões entre fases, relação P/S, energia diária, horas em carga, distribuição de demanda, curva de duração e mapa horário.
+- Comparação de P5 x P15 e S5 x S15 em **barras agrupadas**, não empilhadas.
+- Simulações de Bruno e Jaguar continuam identificadas como hipóteses de sobreposição de campanhas independentes.
 
-## Rodar local
+## Interpretação
+**P5** e **S5** são máximos de potência média em cinco minutos. **P15 móvel** e **S15** são médias em janelas consecutivas de quinze minutos. Máximos intra-intervalo não são demanda fiscal.
+
+**Cobertura** corresponde a registros completos ÷ registros totais da campanha, **não** ao percentual de funcionamento. Períodos sem grandezas não são automaticamente motor desligado.
+
+Bruno e Jaguar foram medidos em períodos diferentes. As simulações não são medições simultâneas nem dimensionamento definitivo de subestação.
+
+## Atualização de dados
+Publique somente dados técnicos previamente revisados. Nunca inclua planilhas brutas, PDFs de fatura, tarifas, preços, credenciais ou banco de dados administrativo neste repositório público.
+
+## Executar local
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
-
-## Publicar no Streamlit Community Cloud
-1. Em https://share.streamlit.io, autentique-se usando o GitHub.
-2. `Create app` → `Yup, I have an app`.
-3. Repositório: `MTH-Comercial/Dashboard-TRF`.
-4. Branch: `portal-energia-externo`.
-5. Main file path: `portal_energia_externo/app.py`.
-6. Defina um subdomínio disponível e clique `Deploy`.
-7. Ajuste a visibilidade como **Public** (sem senha).
-
-> Se hospedar em outra branch ou repositório, atualize os campos acima.
-
-## Atualizar dados publicados
-Substitua somente `dados.json` com uma exportação revisada do **dashboard interno**. Não envie planilhas XLSX, PDFs de faturas nem banco de dados privado. A publicação em nuvem usa o snapshot do GitHub e não lê automaticamente dados do notebook.
-
-## Limitações
-- Os trituradores não foram medidos de forma simultânea.
-- As curvas são dados históricos e cenários, não estimativas fiscais definitivas.
-- A publicação implica que indicadores técnicos e informações sobre cargas fiquem acessíveis publicamente.
