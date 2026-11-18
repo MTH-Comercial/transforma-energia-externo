@@ -1,27 +1,37 @@
-# Portal técnico energético — Transforma
+# Portal técnico energético — Transforma (externo)
 
-Dashboard externo **público e sem senha**, desenvolvido em Streamlit para consulta técnica de TR1, TR2, TR3 e trituradores Bruno/Jaguar. Projeto independente do dashboard administrativo.
+Versão em Streamlit Community Cloud do portal de apresentação técnica.
 
-## Publicação no Streamlit Community Cloud
+## Conteúdo
+- Distribuição funcional TR1, TR2 e TR3 e trituradores Bruno/Jaguar
+- Séries de potência aparente e ativa de 15 minutos (amostras para apresentação)
+- Resultados e indicadores das campanhas completas
+- Cenários **hipotéticos** de sobreposição dos históricos Bruno (2024) e Jaguar (2026)
+- Indicadores técnicos de energia e demanda na entrada em média tensão (jan–ago/2026)
 
-- Repositório: `MTH-Comercial/transforma-energia-externo`
-- Branch: `main`
-- Arquivo principal: `app.py`
-- Acesso: **Public** (não exige senha)
+O arquivo `dados.json` contém exclusivamente o recorte técnico destinado à apresentação externa. Não existem senhas, faturas originais, preços, contas, bancos de dados ou planilhas brutas. Este aplicativo é **público e sem autenticação**.
 
-Acesse https://share.streamlit.io/, conecte sua conta GitHub, selecione **Create app**, este repositório, branch `main` e arquivo `app.py`. Confirme a publicação na sua conta Streamlit.
-
-## Conteúdo e limites
-
-Este repositório contém **somente o recorte técnico para apresentação externa** (`dados.json`), sem faturas digitalizadas, custos, planilhas brutas, senhas ou base administrativa. Os indicadores de média tensão são históricos; as curvas amostradas não devem ser confundidas com medições simultâneas. Os cenários Bruno/Jaguar sobrepõem artificialmente campanhas de 2024 e 2026 e **não são demanda conjunta medida**.
-
-## Executar localmente
-
+## Rodar local
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Atualização dos dados
+## Publicar no Streamlit Community Cloud
+1. Em https://share.streamlit.io, autentique-se usando o GitHub.
+2. `Create app` → `Yup, I have an app`.
+3. Repositório: `MTH-Comercial/Dashboard-TRF`.
+4. Branch: `portal-energia-externo`.
+5. Main file path: `portal_energia_externo/app.py`.
+6. Defina um subdomínio disponível e clique `Deploy`.
+7. Ajuste a visibilidade como **Public** (sem senha).
 
-Atualize `dados.json` somente após revisar e aprovar o recorte de apresentação externa. Não copie arquivos do sistema interno para este repositório.
+> Se hospedar em outra branch ou repositório, atualize os campos acima.
+
+## Atualizar dados publicados
+Substitua somente `dados.json` com uma exportação revisada do **dashboard interno**. Não envie planilhas XLSX, PDFs de faturas nem banco de dados privado. A publicação em nuvem usa o snapshot do GitHub e não lê automaticamente dados do notebook.
+
+## Limitações
+- Os trituradores não foram medidos de forma simultânea.
+- As curvas são dados históricos e cenários, não estimativas fiscais definitivas.
+- A publicação implica que indicadores técnicos e informações sobre cargas fiquem acessíveis publicamente.
