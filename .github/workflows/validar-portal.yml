@@ -1,0 +1,49 @@
+name: Validar portal Streamlit
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  teste:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Conferir codigo e fontes
+        run: |
+          python -m py_compile app.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import pandas as pd
+          data=json.loads(Path("dados.json").read_text(encoding="utf-8"))
+          codes={e["codigo"] for e in data["elementos"]}
+          assert codes=={"TR1","TR2","TR3","BRUNO","JAGUAR"}
+          for code in codes:
+              df=pd.read_csv(Path("series")/(code+".csv"))
+              assert {"data","p15_kw","s15_kva"} <= set(df.columns)
+              assert len(df)>0, code
+          source=Path("app.py").read_text(encoding="utf-8")
+          assert 'NAV = ["Visão geral", "Análises de energia"' in source
+          assert ".reindex(columns=horas)" in source
+          assert "P15 — percentil 95" in source
+          print("OK: cinco séries, menu unificado e mapa 00h–23h")
+          PY
+      - name: Testar paginas via Streamlit
+        run: |
+          python - <<'PY'
+          from streamlit.testing.v1 import AppTest
+          at=AppTest.from_file("app.py").run(timeout=60)
+          assert not at.exception, [str(x.message) for x in at.exception]
+          for page in ("Análises de energia", "Simulação Bruno + Jaguar", "Entrada em média tensão", "Metodologia"):
+              at.sidebar.radio[0].set_value(page).run(timeout=60)
+              assert not at.exception, (page, [str(x.message) for x in at.exception])
+              print("OK:",page)
+          PY
