@@ -16,7 +16,7 @@ import streamlit as st
 st.set_page_config(page_title="Transforma | Painel técnico energético", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
 ROOT = Path(__file__).resolve().parent
 COLORS = {"blue":"#155f7a", "teal":"#13948b", "dark":"#12364d", "grey":"#647c88", "orange":"#c68c35", "purple":"#7b62a3"}
-NAV = ["Visão geral", "Pontos de medição", "Demanda de 15 minutos", "Simulação Bruno + Jaguar", "Entrada em média tensão", "Metodologia"]
+NAV = ["Visão geral", "Análises de energia", "Simulação Bruno + Jaguar", "Entrada em média tensão", "Metodologia"]
 
 @st.cache_data(show_spinner=False)
 def load_data() -> dict:
@@ -81,7 +81,7 @@ def section(title, note=""):
 
 def choose(code, navigate=False):
     st.session_state["focus_code"] = code
-    if navigate: st.session_state["nav_page"] = "Pontos de medição"
+    if navigate: st.session_state["nav_page"] = "Análises de energia"
 
 
 def base_fig(title="", ytitle=""):
@@ -139,7 +139,7 @@ def display_point(e, prefix):
     code=e["codigo"]
     st.markdown(f"### {e['nome']}")
     st.write(e["descricao"])
-    st.caption(f"{e['tipo']} · {e['tensao']} · Campanha de {date_br(e['inicio'])} a {date_br(e['fim'])}")
+    st.caption(f"{e['tipo']} · {e['tensao']} · Análise de energia: {date_br(e['inicio'])} a {date_br(e['fim'])}")
     c1,c2,c3,c4=st.columns(4)
     with c1:metric("Demanda P15 móvel máxima",f"{fmt(e['p15_max_kw'])} kW","Maior média móvel válida")
     with c2:metric("S15 máxima",f"{fmt(e['s15_max_kva'])} kVA","Aparente média em 15 min")
@@ -260,52 +260,45 @@ with st.sidebar:
     page = st.radio("Navegação",NAV,key="nav_page",label_visibility="collapsed")
     st.divider()
     st.caption("Consulta externa · somente leitura")
-    st.caption("Campanhas históricas · curadoria: "+date_br(DATA.get("atualizacao","2026-11-18")))
+    st.caption("Análises de energia · dados revisados em: "+date_br(DATA.get("atualizacao","2026-11-18")))
     st.caption("Recorte de dados técnicos. Acesso público sem autenticação.")
 
 if page=="Visão geral":
     st.title("Infraestrutura e comportamento elétrico")
-    st.write("Campanhas históricas de cinco pontos instrumentados. Selecione um equipamento para explorar o histórico e os gráficos detalhados.")
-    st.markdown('<div class="context"><b>Escopo:</b> TR1, TR2 e TR3 recebem energia da rede MT e fornecem 220 V entre fases; Bruno e Jaguar operam em 380 V com geradores a diesel. Nenhuma das cinco campanhas é simultânea a todas as demais.</div>',unsafe_allow_html=True)
+    st.write("Foram realizadas cinco análises de energia, com coletas em equipamentos distintos. Selecione um ponto para explorar o histórico e os gráficos.")
+    st.markdown('<div class="context"><b>Escopo:</b> TR1, TR2 e TR3 recebem energia da rede MT e fornecem 220 V entre fases; Bruno e Jaguar operam em 380 V com geradores a diesel. As cinco coletas ocorreram em datas diferentes e não correspondem à medição simultânea de toda a planta.</div>',unsafe_allow_html=True)
     section("Distribuição funcional das cargas")
     cols=st.columns(3)
     for i,e in enumerate(ITEMS):
         with cols[i%3]:
             st.markdown(f'''<div class="asset"><span class="tag">{html.escape(e['tipo'])} · {html.escape(e['tensao'])}</span>
              <strong>{html.escape(e['nome'])}</strong><p>{html.escape(e['descricao'])}</p>
-             <small>Campanha: {date_br(e['inicio'])} a {date_br(e['fim'])}</small></div>''',unsafe_allow_html=True)
+             <small>Coleta de dados: {date_br(e['inicio'])} a {date_br(e['fim'])}</small></div>''',unsafe_allow_html=True)
             st.button("Explorar medições de "+e['codigo'],key="overview_"+e['codigo'],on_click=choose,args=(e['codigo'],True),use_container_width=True)
             st.write("")
     section("Síntese do conjunto disponível")
     cols=st.columns(4)
     with cols[0]:metric("Pontos instrumentados",str(len(ITEMS)),"3 transformadores + 2 trituradores")
-    with cols[1]:metric("Campanhas distintas",str(len(ITEMS)),"Não sincronizadas")
+    with cols[1]:metric("Análises de energia",str(len(ITEMS)),"Coletas em datas diferentes")
     with cols[2]:metric("Registros históricos",fmt(sum(x['registros'] for x in ITEMS),0),"Incluindo períodos sem grandezas")
     with cols[3]:metric("Meses com indicadores MT",str(len(BILLS)),"Somente grandezas técnicas")
     st.info("Os trituradores operavam com geradores a diesel nas campanhas fornecidas; seus consumos medidos não integram o consumo da Enel no mesmo período.")
 
-elif page=="Pontos de medição":
-    st.title("Pontos de medição — explorar equipamento")
-    st.caption("Selecione um dos cinco pontos para abrir os gráficos históricos e indicadores do equipamento imediatamente abaixo.")
-    asset_buttons("point")
-    st.divider()
-    display_point(BY_CODE[st.session_state["focus_code"]],"pontos_"+st.session_state["focus_code"])
-
-elif page=="Demanda de 15 minutos":
-    st.title("Comparação das campanhas")
-    st.caption("Campanhas independentes, de durações diferentes. Os máximos não representam uma demanda simultânea de toda a instalação.")
+elif page=="Análises de energia":
+    st.title("Análises de energia — comparação e detalhamento")
+    st.caption("Compare as cinco coletas de dados e selecione o equipamento para ver todas as curvas, demandas de 15 minutos, energia e indicadores. As medições não foram simultâneas.")
     glossary()
     rows=[]
     for e in ITEMS:
         rows.append({"Ponto":e["codigo"],"Período":f"{date_br(e['inicio'])} – {date_br(e['fim'])}",
             "P5 máx. (kW)":e['p5_max_kw'],"P15 máx. (kW)":e['p15_max_kw'],
             "S5 máx. (kVA)":e['s5_max_kva'],"S15 máx. (kVA)":e['s15_max_kva'],
-            "Cobertura (%)":round(100*e['validos']/e['registros'],1)})
+            "Leituras completas (%)":round(100*e['validos']/e['registros'],1)})
     st.caption("Selecione uma linha ou utilize os botões abaixo para abrir o equipamento.")
     event=st.dataframe(pd.DataFrame(rows),hide_index=True,use_container_width=True,
         on_select="rerun",selection_mode="single-row",key="select_campaign",
         column_config={x:st.column_config.NumberColumn(format="%.1f") for x in
-           ("P5 máx. (kW)","P15 máx. (kW)","S5 máx. (kVA)","S15 máx. (kVA)","Cobertura (%)")})
+           ("P5 máx. (kW)","P15 máx. (kW)","S5 máx. (kVA)","S15 máx. (kVA)","Leituras completas (%)")})
     if event.selection.rows:
         st.session_state["focus_code"]=ITEMS[event.selection.rows[0]]["codigo"]
     st.markdown("**Explorar ponto:**")
@@ -326,9 +319,9 @@ elif page=="Demanda de 15 minutos":
         fig.add_trace(go.Bar(name="S15 · média 15 min",x=names,y=[e['s15_max_kva'] for e in ITEMS],marker_color=COLORS['orange']))
         fig.update_layout(barmode="group")
         st.plotly_chart(fig,use_container_width=True,key="s5_s15_compare")
-    st.info("Cobertura = registros completos ÷ registros totais. Bruno: 872/4.288 (20,3%); Jaguar: 519/3.268 (15,9%). A diferença pode incluir paradas operacionais ou ausência de medição; não é fator de utilização.")
+    st.info("**Leituras completas (%):** quantidade de registros elétricos completos dividida pelo total de registros da coleta. Bruno: 872/4.288 (20,3%); Jaguar: 519/3.268 (15,9%). Conforme operação informada, paradas de trituração incluem o desligamento do gerador. Esse percentual não indica falha de medição nem duração efetiva de produção.")
     st.divider()
-    section("Detalhamento selecionado — " + BY_CODE[st.session_state["focus_code"]]["nome"])
+    section("Gráficos e indicadores do equipamento selecionado — " + BY_CODE[st.session_state["focus_code"]]["nome"])
     display_point(BY_CODE[st.session_state["focus_code"]],"comp_"+st.session_state["focus_code"])
 
 elif page=="Simulação Bruno + Jaguar":
@@ -411,4 +404,4 @@ else:
     ''')
 
 st.divider()
-st.caption("TRANSFORMA · Portal técnico energético · Consulta externa · Revisão 5.0 · Campanhas independentes")
+st.caption("TRANSFORMA · Portal técnico energético · Consulta externa · Revisão 6.0 · Cinco análises de energia independentes")
