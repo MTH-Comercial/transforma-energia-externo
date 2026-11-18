@@ -101,14 +101,15 @@ def add_line(fig, df, column, label, color, x="data"):
 
 
 def glossary():
-    with st.expander("Entenda P5, P15, S5, S15, pico e cobertura", expanded=False):
+    with st.expander("Entenda os indicadores: demanda, janelas de 15 minutos e leituras", expanded=False):
         st.markdown('''
-        - **P5 (kW):** maior **potência ativa média de cinco minutos** observada. Não é uma potência a somar ao P15.
-        - **P15 móvel (kW):** maior potência ativa média em **três registros consecutivos de cinco minutos**, sem preencher lacunas. É um indicador de engenharia; não comprova demanda fiscal simultânea da Enel.
-        - **S5 e S15 (kVA):** potências **aparentes médias** respectivamente em cinco e quinze minutos. Relacionam-se ao carregamento elétrico, não à cobrança direta de demanda em kW.
-        - **Pico intra-5 min (kVA):** máximo registrado internamente pelo analisador no intervalo de cinco minutos. Pode ser muito superior à média do próprio intervalo; sua duração não está demonstrada por esse indicador.
-        - **Cobertura dos registros (%):** quantidade de registros com grandezas completas dividida pela quantidade total de registros esperados/presentes na campanha. **Não é fator de utilização do motor nem prova de desligamento**, pois inclui possíveis paradas e ausência de medição.
-        - **Energia registrada (kWh):** soma dos intervalos com dados válidos, não o consumo total garantido nos períodos sem valores.
+        - **P5 (kW):** maior **potência ativa média em 5 minutos**. **P15 (kW):** maior potência ativa média móvel em **15 minutos**, calculada com três leituras consecutivas e completas de cinco minutos. P5 e P15 são duas maneiras de observar a **mesma carga**, e **não devem ser somadas**.
+        - **S5 e S15 (kVA):** médias de **potência aparente** em 5 e 15 minutos; ajudam a avaliar o carregamento elétrico. A demanda contratada na Enel é estudada em kW e no ponto de entrega, não diretamente por esses picos em kVA.
+        - **Pico dentro de 5 minutos (kVA):** maior potência aparente interna registrada pelo analisador naquele intervalo. Sua duração exata não é conhecida.
+        - **Janela de 15 minutos válida:** intervalo calculável com **três registros completos consecutivos de 5 minutos**; não significa uma partida de motor. Janelas móveis se sobrepõem.
+        - **Leituras completas (%):** registros com grandezas disponíveis divididos pelo total de registros da coleta. Segundo a operação informada, Bruno e Jaguar deixam de ter grandezas durante paradas da trituração, quando gerador e triturador são desligados. Isso **não mede tempo de produção** nem caracteriza defeito de medição.
+        - **P15 — percentil 95 (P95):** em 95% das janelas móveis calculadas, a demanda ficou **até** esse valor; 5% ficaram acima. Não é a maior demanda nem uma potência contratada.
+        - **Energia registrada (kWh):** energia dos intervalos com dados disponíveis, sem atribuir consumo zero a lacunas.
         ''')
 
 
@@ -397,17 +398,17 @@ else:
     st.title("Metodologia e limitações")
     glossary()
     st.markdown('''
-    **Origem.** Cinco campanhas independentes do analisador de energia e indicadores técnicos históricos da fatura de MT.
+    **Origem.** Cinco análises de energia obtidas com o analisador em períodos distintos e indicadores técnicos históricos da entrada em média tensão (MT).
 
     **Janelas de demanda.** P15 é reconstruída de três amostras válidas e consecutivas de cinco minutos. Nenhuma amostra sem grandezas é transformada em zero. A curva é interrompida quando há falta de janelas completas; o zoom do gráfico permite ver a intermitência.
 
-    **Cobertura (%).** Quantidade de registros completos dividida pelo total de registros. Não é porcentagem de motor ligado, nem fator de carga. Ausência de valores pode decorrer de desligamento do gerador, parada da máquina ou ausência de medição; não é possível afirmar qual exclusivamente pela planilha.
+    **Leituras completas (%).** Quantidade de registros elétricos completos dividida pelo total de registros da coleta. Segundo a informação operacional fornecida, Bruno e Jaguar deixam de registrar grandezas quando ocorre parada de produção com desligamento do gerador e do triturador. O percentual não mede tempo de produção; para TR1, TR2 e TR3, lacunas devem ser examinadas separadamente.
 
-    **Comparações.** As barras de P5 e P15 são agrupadas (não empilhadas), porque representam estatísticas distintas da **mesma** potência. As campanhas duraram tempos diferentes; energia total não deve ser tratada como consumo diário comparável.
+    **Comparações.** P5 e P15 (assim como S5 e S15) são medidas em durações diferentes da **mesma carga**: aparecem lado a lado, não somadas. As coletas duraram tempos diferentes; energia total não deve ser tratada como consumo diário comparável. **Janelas móveis de 15 minutos** são médias sobrepostas com dados completos, não partidas elétricas. O histograma conta essas janelas por faixa de kW; a curva de duração as ordena da maior para a menor potência.
 
     **Relação P/S.** O quociente P15/S15 é indicador descritivo; não substitui fator de potência fiscal, medições de harmônicos ou testes de qualidade de energia.
 
-    **Trituradores.** Bruno (2024) e Jaguar (2026) foram medidos separadamente. Cenários alinhados são hipóteses de simultaneidade sem validação operacional. Não comprovam demanda real conjunta ou dimensionamento definitivo de 1.000 kVA.
+    **Trituradores.** Bruno (2024) e Jaguar (2026) foram medidos separadamente. O desligamento de geradores e máquinas nas paradas de produção foi informado pela operação. Cenários alinhados são hipóteses de simultaneidade sem medição conjunta; não comprovam demanda real conjunta nem dimensionamento definitivo de 1.000 kVA.
 
     **Média tensão.** Os dados de fatura são da entrada da distribuidora. Não há sincronismo temporal entre essas faturas e os períodos das cinco campanhas.
 
