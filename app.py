@@ -294,7 +294,7 @@ if page=="Visão geral":
     with cols[1]:metric("Análises de energia",str(len(ITEMS)),"Coletas em datas diferentes")
     with cols[2]:metric("Registros históricos",fmt(sum(x['registros'] for x in ITEMS),0),"Incluindo períodos sem grandezas")
     with cols[3]:metric("Meses com indicadores MT",str(len(BILLS)),"Somente grandezas técnicas")
-    st.info("Os trituradores operavam com geradores a diesel nas campanhas fornecidas; seus consumos medidos não integram o consumo da Enel no mesmo período.")
+    st.info("Os trituradores foram analisados individualmente, utilizando geradores a diesel. A energia dessas coletas não integra o histórico de faturamento da Enel apresentado para outros períodos.")
 
 elif page=="Análises de energia":
     st.title("Análises de energia — comparação e detalhamento")
@@ -410,7 +410,7 @@ else:
 
     **Trituradores.** Bruno (2024) e Jaguar (2026) foram medidos separadamente. O desligamento de geradores e máquinas nas paradas de produção foi informado pela operação. Cenários alinhados são hipóteses de simultaneidade sem medição conjunta; não comprovam demanda real conjunta nem dimensionamento definitivo de 1.000 kVA.
 
-    **Média tensão.** Os dados de fatura são da entrada da distribuidora. Não há sincronismo temporal entre essas faturas e os períodos das cinco campanhas.
+    **Média tensão.** Os dados de fatura são da entrada da distribuidora. Não há sincronismo temporal entre essas faturas e os períodos das cinco análises de energia.
 
     **Privacidade.** Somente recortes técnicos e séries derivadas foram disponibilizados. Sem senhas e sem função de importar, editar ou consultar arquivos de gestão interna.
     ''')
